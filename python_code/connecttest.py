@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 SCRIPT_DIR = pathlib.Path(__file__).parent.resolve()
 TEST_DB_PATH = SCRIPT_DIR / pathlib.Path(str(os.getenv("TEST_DATABASE_FILE_PATH")))
-
+TEST_LOG_PATH = SCRIPT_DIR / pathlib.Path(str(os.getenv("TEST_LOG_FILE_PATH")))
 
 def release_logging_handlers():
     for handler in logging.root.handlers[:]:
@@ -18,7 +18,7 @@ def release_logging_handlers():
 
 class TestLogPath(unittest.TestCase):
 
-    def test_inc_log_path(self, inc_log_path="./test./log", cor_db_path="./test.db"):
+    def test_inc_log_path(self, inc_log_path="./test./log", cor_db_path=TEST_DB_PATH):
         release_logging_handlers()
         error = False
         try:
@@ -32,7 +32,7 @@ class TestLogPath(unittest.TestCase):
 
         self.assertEqual(error, True, "A FileNotFoundError should be raised")
 
-    def test_cor_log_path(self, cor_log_path="./test.log", cor_db_path="./test.db"):
+    def test_cor_log_path(self, cor_log_path=TEST_LOG_PATH, cor_db_path=TEST_DB_PATH):
         release_logging_handlers()
         error = False
         success = False
@@ -59,7 +59,7 @@ class TestLogPath(unittest.TestCase):
 
 class TestDBPath(unittest.TestCase):
 
-    def test_inc_db_path(self, cor_log_path="./test.log", inc_db_path="./db./bp"):
+    def test_inc_db_path(self, cor_log_path=TEST_LOG_PATH, inc_db_path="./db./bp"):
         release_logging_handlers()
         error = False
         log = []
@@ -94,7 +94,7 @@ class TestDBPath(unittest.TestCase):
         self.assertEqual(error, True, "A FileNotFoundError should occur")
 
     def test_nexist_db_path(
-        self, cor_log_path="./test.log", nexist_db_path="./nexist.db"
+        self, cor_log_path=TEST_LOG_PATH, nexist_db_path="./nexist.db"
     ):
         release_logging_handlers()
         error = False
@@ -131,7 +131,7 @@ class TestDBPath(unittest.TestCase):
 
 class TestSuccess(unittest.TestCase):
 
-    def test_success(self, cor_db_path="../db.db", cor_log_path="./test.log"):
+    def test_success(self, cor_db_path=TEST_DB_PATH, cor_log_path=TEST_LOG_PATH):
         log = []
         expected_log = [
             f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
@@ -165,4 +165,6 @@ class TestSuccess(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    print(TEST_DB_PATH)
+    print(TEST_LOG_PATH)
     unittest.main()
