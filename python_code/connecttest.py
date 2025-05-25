@@ -3,8 +3,11 @@ import unittest
 import pathlib
 import os
 import logging
+from dotenv import load_dotenv
 
+load_dotenv()
 SCRIPT_DIR = pathlib.Path(__file__).parent.resolve()
+TEST_DB_PATH = SCRIPT_DIR / pathlib.Path(str(os.getenv("TEST_DATABASE_FILE_PATH")))
 
 
 def release_logging_handlers():
@@ -15,7 +18,7 @@ def release_logging_handlers():
 
 class TestLogPath(unittest.TestCase):
 
-    def test_inc_log_path(self, inc_log_path="./test./log", cor_db_path="../db.db"):
+    def test_inc_log_path(self, inc_log_path="./test./log", cor_db_path="./test.db"):
         release_logging_handlers()
         error = False
         try:
@@ -29,7 +32,7 @@ class TestLogPath(unittest.TestCase):
 
         self.assertEqual(error, True, "A FileNotFoundError should be raised")
 
-    def test_cor_log_path(self, cor_log_path="./test.log", cor_db_path="../db.db"):
+    def test_cor_log_path(self, cor_log_path="./test.log", cor_db_path="./test.db"):
         release_logging_handlers()
         error = False
         success = False
@@ -56,18 +59,23 @@ class TestLogPath(unittest.TestCase):
 
 class TestDBPath(unittest.TestCase):
 
-    def test_inc_db_path(self, cor_log_path="./test.log", inc_db_path="./db./db"):
+    def test_inc_db_path(self, cor_log_path="./test.log", inc_db_path="./db./bp"):
         release_logging_handlers()
         error = False
         log = []
         expected_log = [
-            "INFO:connect:STARTED\n",
+            f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
             f"INFO:connect:log_path: {str(SCRIPT_DIR / cor_log_path)}\n",
             "ERROR:connect:FileNotFoundError\n",
             "INFO:connect:FINISHED\n",
         ]
+        log_path = SCRIPT_DIR / pathlib.Path(cor_log_path)
+
+        if log_path.exists():
+            os.remove(log_path)
 
         try:
+
             con = connect.connect_sqlite(
                 str(SCRIPT_DIR / inc_db_path), str(SCRIPT_DIR / cor_log_path)
             )
@@ -92,11 +100,15 @@ class TestDBPath(unittest.TestCase):
         error = False
         log = []
         expected_log = [
-            "INFO:connect:STARTED\n",
+            f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
             f"INFO:connect:log_path: {str(SCRIPT_DIR / cor_log_path)}\n",
             "ERROR:connect:FileNotFoundError\n",
             "INFO:connect:FINISHED\n",
         ]
+        log_path = SCRIPT_DIR / pathlib.Path(cor_log_path)
+
+        if log_path.exists():
+            os.remove(log_path)
 
         try:
             con = connect.connect_sqlite(
@@ -122,12 +134,16 @@ class TestSuccess(unittest.TestCase):
     def test_success(self, cor_db_path="../db.db", cor_log_path="./test.log"):
         log = []
         expected_log = [
-            "INFO:connect:STARTED\n",
+            f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
             f"INFO:connect:log_path: {str(SCRIPT_DIR / cor_log_path)}\n",
             f"INFO:connect:db_path: {str(SCRIPT_DIR / cor_db_path)}\n",
             f"INFO:connect:Successfully connected with {pathlib.Path(str(SCRIPT_DIR / cor_db_path)).name}\n",
-            "INFO:connect:FINISHED\n"
+            "INFO:connect:FINISHED\n",
         ]
+        log_path = SCRIPT_DIR / pathlib.Path(cor_log_path)
+
+        if log_path.exists():
+            os.remove(log_path)
 
         con = connect.connect_sqlite(
             str(SCRIPT_DIR / cor_db_path), str(SCRIPT_DIR / cor_log_path)
@@ -136,8 +152,17 @@ class TestSuccess(unittest.TestCase):
         with open(str(SCRIPT_DIR / cor_log_path), "r") as f:
             log = f.readlines()
 
-        self.assertEqual(log, expected_log, "Log Should: log start, log log_path, log db_path, log success, log finish")
-        self.assertEqual(type(con).__name__, "Connection", "connect_sqlite should return a valid sqlite3 Connection object")
+        self.assertEqual(
+            log,
+            expected_log,
+            "Log Should: log start, log log_path, log db_path, log success, log finish",
+        )
+        self.assertEqual(
+            type(con).__name__,
+            "Connection",
+            "connect_sqlite should return a valid sqlite3 Connection object",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
