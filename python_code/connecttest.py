@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 SCRIPT_DIR = pathlib.Path(__file__).parent.resolve()
-TEST_DB_PATH = SCRIPT_DIR / pathlib.Path(str(os.getenv("TEST_DATABASE_FILE_PATH")))
+TEST_DB_PATH = SCRIPT_DIR / \
+    pathlib.Path(str(os.getenv("TEST_DATABASE_FILE_PATH")))
 TEST_LOG_PATH = SCRIPT_DIR / pathlib.Path(str(os.getenv("TEST_LOG_FILE_PATH")))
+
 
 def release_logging_handlers():
     for handler in logging.root.handlers[:]:
@@ -61,15 +63,15 @@ class TestDBPath(unittest.TestCase):
 
     def test_inc_db_path(self, cor_log_path=TEST_LOG_PATH, inc_db_path="./db./bp"):
         release_logging_handlers()
-        error = False
+        error_occurs = False
         log = []
         expected_log = [
             f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
             f"INFO:connect:log_path: {str(SCRIPT_DIR / cor_log_path)}\n",
-            "ERROR:connect:FileNotFoundError\n",
             "INFO:connect:FINISHED\n",
         ]
         log_path = SCRIPT_DIR / pathlib.Path(cor_log_path)
+        expected_error = "FileNotFoundError"
 
         if log_path.exists():
             os.remove(log_path)
@@ -81,30 +83,38 @@ class TestDBPath(unittest.TestCase):
             )
             con.close()
         except FileNotFoundError:
-            error = True
+            error_occurs = True
 
         with open(str(SCRIPT_DIR / cor_log_path), "r") as f:
             log = f.readlines()
+            actual_error = log[-2]
+            log = log[0:2] + [log[-1]]
 
         self.assertEqual(
             log,
             expected_log,
             "Log should start, log_path should be logged, FileNotFoundError should be logged, Log should finish",
         )
-        self.assertEqual(error, True, "A FileNotFoundError should occur")
+        self.assertIn(
+            expected_error,
+            actual_error,
+            "A FileNotFoundError stack trace should be logged",
+        )
+        self.assertEqual(error_occurs, True,
+                         "A FileNotFoundError should occur")
 
     def test_nexist_db_path(
         self, cor_log_path=TEST_LOG_PATH, nexist_db_path="./nexist.db"
     ):
         release_logging_handlers()
-        error = False
+        error_occurs = False
         log = []
         expected_log = [
             f"INFO:connect:STARTED AT CWD: {os.getcwd()}\n",
             f"INFO:connect:log_path: {str(SCRIPT_DIR / cor_log_path)}\n",
-            "ERROR:connect:FileNotFoundError\n",
             "INFO:connect:FINISHED\n",
         ]
+        expected_error = "FileNotFoundError"
         log_path = SCRIPT_DIR / pathlib.Path(cor_log_path)
 
         if log_path.exists():
@@ -116,17 +126,22 @@ class TestDBPath(unittest.TestCase):
             )
             con.close()
         except FileNotFoundError:
-            error = True
+            error_occurs = True
 
         with open(str(SCRIPT_DIR / cor_log_path), "r") as f:
             log = f.readlines()
+            actual_error = log[-2]
+            log = log[0 : 2] + [log[-1]]
+
 
         self.assertEqual(
             log,
             expected_log,
             "Log should start, log_path should be logged, FileNotFoundError should be logged, Log should finish",
         )
-        self.assertEqual(error, True, "A FileNotFoundError should occur")
+        self.assertIn(expected_error, actual_error, "A FileNotFoundError stack trace should be logged")
+        self.assertEqual(error_occurs, True,
+                         "A FileNotFoundError should occur")
 
 
 class TestSuccess(unittest.TestCase):
@@ -165,6 +180,6 @@ class TestSuccess(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print(TEST_DB_PATH)
-    print(TEST_LOG_PATH)
+    # print(TEST_DB_PATH)
+    # print(TEST_LOG_PATH)
     unittest.main()
