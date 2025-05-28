@@ -1,25 +1,28 @@
 # This is the python file, which sets up database connections
 
 from dotenv import load_dotenv
-import sqlite3 # Usage of the sqlite3 library is required in order to connect to sqlite databases
-import pathlib # pathlib is required in order to check if files and directories exist
-import logging # logging is used to log important steps in the code execution, to provide a comprehensive review if something goes wrong
+import sqlite3  # Usage of the sqlite3 library is required in order to connect to sqlite databases
+import pathlib  # pathlib is required in order to check if files and directories exist
+import logging  # logging is used to log important steps in the code execution, to provide a comprehensive review if something goes wrong
 import os
 
-logger = logging.getLogger(__name__) # logger object is used to actually log the steps
+logger = logging.getLogger(__name__)  # logger object is used to actually log the steps
 load_dotenv()
 LOG_PATH = os.getenv("CONNECTPY_LOG_FILE_PATH")
 CWD = os.getcwd()
+
 
 def validate_path_existence(path):
     path = pathlib.Path(path)
     if not path.exists():
         raise FileNotFoundError
-    
+
     return path
+
 
 def setup_logger(log_path=LOG_PATH):
     logging.basicConfig(filename=log_path, level=logging.INFO)
+
 
 # This function takes parameters: db_path and log_path, which represent the database file path and the logging file path.
 # The database file is required to exist beforehand, the logging file is not.
@@ -37,17 +40,43 @@ def connect_sqlite(db_path, log_path=LOG_PATH):
     try:
         db_path = validate_path_existence(db_path)
         logger.info(f"db_path: {db_path}")
-        con = sqlite3.connect(db_path) # an attempt to connect to the database is made
+        con = sqlite3.connect(db_path)  # an attempt to connect to the database is made
         logger.info(f"Successfully connected with {db_path.name}")
         logger.info("FINISHED")
-        return con # if successful, the connection to the database is returned
+        return con  # if successful, the connection to the database is returned
 
-    except (FileNotFoundError, PermissionError, OSError, sqlite3.OperationalError, sqlite3.DatabaseError, IOError, ValueError, sqlite3.Error) as e:
-        logger.exception(e) # if an error occurs, it is logged
+    except FileNotFoundError as e:
+        logger.exception(f"File path invalid, or couldn't be found: {e}")
+        logger.info("FINISHED")
+        raise e
+    except PermissionError as e:
+        logger.exception(f"File path is probably invalid as it starts with a /: {e}")
+        logger.info("FINISHED")
+        raise e
+    except OSError as e:
+        logger.exception(
+            f"File path is probably invalid because it has a null value '\\0' in it: {e}"
+        )
+        logger.info("FINISHED")
+        raise e
+    except sqlite3.OperationalError as e:
+        logger.exception(
+            f"Possible database file corruption, issues with database access permissions or invalid SQL syntax in queries: {e}"
+        )
+        logger.info("FINISHED")
+        raise e
+    except ValueError as e:
+        logger.exception(
+            f"Path may be invalid and unable to be resolved by 'Path': {e}"
+        )
+        logger.info("FINISHED")
+        raise e
+    except (IOError, sqlite3.Error) as e:
+        logger.exception(e)  # if an error occurs, it is logged
         logger.info("FINISHED")
         raise e
 
 
 if __name__ == "__main__":
-    #connect_sqlite("./db.db") # simple manual test to see how the program handles invalid database paths
+    connect_sqlite("./db.db") # simple manual test to see how the program handles invalid database paths
     pass
